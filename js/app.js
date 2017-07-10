@@ -6,8 +6,7 @@ var RssFeed = {};
 var feedList = [
     "http://digg.com/api/news/popular.json",
     "http://mashable.com/stories.json",
-    "https://www.reddit.com/top.json",
-    "http://lifehacker.com/rss"
+    "https://www.reddit.com/top.json"
 ];
 // remove the "www" and everything after the third "/"
 // var stripDomain = (function(url) {
@@ -29,23 +28,30 @@ var hideOverlay = function(){
     popUp.addClass("loader hidden");
 };
 
+// fill overlay with content
 var refillPopUp = function(newH, newP, newU) {
-    popUp.find(".container h1").text(newH);
-    popUp.find(".container p").text(newP);
+    popUp.find(".container h1").html(newH);
+    popUp.find(".container p").html(newP);
     popUp.find(".container a").attr("href", newU);
 }
 
+// control search button
 var searchBtn = $("#searchBtn");
 var toggleSearch = function(){
     searchBtn.parent().toggleClass("active");
-    console.log("Toggle Search");
 };
 
+// populate dropdown
 var displayFeedName = function(name){
     $("#navFeed span").text(name);
 };
 
 var articleLink = ".articleContent a";
+
+// alert for failed feeds
+var alertFeedFail = function() {
+    alert("For some reason, this content feed didn't load.");
+};
 
 RssFeed.compileItem = function(template, item){
     var source = template.html();
@@ -72,7 +78,8 @@ var diggLoadFeed = function() {
     var diggUrl = feedPrefix + feedList[0];
 
     var diggRequest = $.ajax({
-        url: diggUrl
+        url: diggUrl,
+        timeout: 3000
     });
 
     diggRequest.done(function(diggFeed) {        
@@ -86,20 +93,23 @@ var diggLoadFeed = function() {
             var itemUrl = baseItem.content.url;
             var itemCount = baseItem.diggs.count;
             var itemDescription = baseItem.content.description;
+            var tagList = [];
             for (var j = 0; j < baseItem.content.tags.length; j++) {
-                var tagArray = [];
                 var newTag = baseItem.content.tags[j].display_name;
-                tagArray.push(newTag);
+                tagList.push(newTag);
             }
-            var itemTags = tagArray.join(" ");
-            RssFeed.addItem(itemTitle, itemImage, itemUrl, itemCount, "Digg", itemDescription);
+            var itemTags = tagList.join(", ");
+            RssFeed.addItem(itemTitle, itemImage, itemUrl, itemCount, itemTags, itemDescription);
         }
 
         displayFeedName("Digg");
 
         hideOverlay();
 
-        console.log("dFeed: ", diggFeed);
+    });
+
+    diggRequest.fail(function(xhr) {
+        alertFeedFail();
     });
 };
 
@@ -107,7 +117,8 @@ var mashLoadFeed = function() {
     var mashUrl = feedPrefix + feedList[1];
     
     var mashRequest = $.ajax({
-        url: mashUrl
+        url: mashUrl,
+        timeout: 3000
     });
 
     mashRequest.done(function(mashFeed) {
@@ -120,21 +131,19 @@ var mashLoadFeed = function() {
             var itemImage = baseItem.responsive_images[3].image;
             var itemUrl = baseItem.link;
             var itemCount = baseItem.shares.total;
+            var itemTags = baseItem.channel;
             var itemDescription = baseItem.excerpt;
-            // for (var j = 0; j < baseItem.content.tags.length; j++) {
-            //     var tagArray = [];
-            //     var newTag = baseItem.content.tags[j].display_name;
-            //     tagArray.push(newTag);
-            // }
-            // var itemTags = tagArray.join(" ");
-            RssFeed.addItem(itemTitle, itemImage, itemUrl, itemCount, "Mashable", itemDescription);
+            RssFeed.addItem(itemTitle, itemImage, itemUrl, itemCount, itemTags, itemDescription);
         }
 
         displayFeedName("Mashable New");
 
         hideOverlay();
 
-        console.log("mFeed: ", mashFeed);
+    });
+
+    mashRequest.fail(function(xhr) {
+        alertFeedFail();
     });
 };
 
@@ -142,7 +151,8 @@ var redditLoadFeed = function() {
     var redditUrl = feedPrefix + feedList[2];
 
     var redditRequest = $.ajax({
-        url: redditUrl
+        url: redditUrl,
+        timeout: 3000
     });
 
     redditRequest.done(function(redditFeed) {
@@ -155,17 +165,24 @@ var redditLoadFeed = function() {
             var itemImage = baseItem.data.thumbnail;
             var itemUrl = baseItem.data.url;
             var itemCount = baseItem.data.score;
-            // var itemDescription = baseItem.content.description;
-            RssFeed.addItem(itemTitle, itemImage, itemUrl, itemCount, "Reddit");
+            var itemTags = baseItem.data.subreddit_name_prefixed;
+            // var imgUrl = baseItem.data.url;
+            // var img = document.createElement("img");
+            // img.src = imgUrl;
+            // var itemDescription = img;
+            // console.log(itemDescription);
+            RssFeed.addItem(itemTitle, itemImage, itemUrl, itemCount, itemTags);
         }
 
         displayFeedName("Reddit");
 
         hideOverlay();
 
-        console.log("rFeed: ", redditFeed);
+    });
 
-    });   
+    redditRequest.fail(function(xhr) {
+        alertFeedFail();
+    });
 };
 
 // var lifehackerLoadFeed = function() {
@@ -198,18 +215,25 @@ var redditLoadFeed = function() {
 
 $(document).ready(function() {
 
+    // show loader
     showLoader();
 
     // load default feed
     diggLoadFeed();
 
+    // close popup on Esc
+    $(document).keyup(function(e) {
+        if (e.keyCode === 27) {
+            hideOverlay();
+        }
+    });
+
 	// show Digg feed on click
-    $(document).on("click", "#diggLink", function(){
+    $(document).on("click", "#diggLink, #logo", function(){
         $("#main").html("");
         showLoader();
         diggLoadFeed();
     });
-
 
 	// show Mashable feed on click
     $(document).on("click", "#mashableLink", function(){
@@ -217,7 +241,6 @@ $(document).ready(function() {
         showLoader();
         mashLoadFeed();
     });
-
 
     // show Reddit feed on click
     $(document).on("click", "#redditLink", function(){
@@ -232,14 +255,11 @@ $(document).ready(function() {
 
     $(document).on("click", "#searchBtn", function(){
         toggleSearch();
-        console.log("Search");
     });
 
     $(document).on("keydown", function(e){
         if (e.which == 13) {
             toggleSearch();
-            console.log("Enter");
-            console.log("---------------------------");
         }
     });
 
@@ -251,10 +271,6 @@ $(document).ready(function() {
         var artUrl = articleWrap.data("url");
         refillPopUp(artTitle, artDescription, artUrl);
         showDetails();
-    });
-
-    $(document).keyup(function(e) {
-        if (e.keyCode === 27) hideOverlay();   // esc
     });
 
 });
