@@ -88,7 +88,7 @@ header nav {
 }
 
 /* Search bar */
-header #search {
+#search {
   width: 20px;
   height: 20px;
   position: absolute;
@@ -96,22 +96,22 @@ header #search {
   top: 10px;
 }
 
-header #search a {
+#search a {
   display: block;
   width: 100%;
   padding: 10px;
 }
 
-header #search a:hover {
+#search a:hover {
   background: #CC0020;
 }
 
-header #search img {
+#search img {
   width: 100%;
   display: block;
 }
 
-header #search input {
+#search input {
   position: absolute;
   right: 20px;
   /*top: 10px;*/
@@ -121,13 +121,13 @@ header #search input {
   visibility: hidden;
 }
 
-header #search.active input {
+#search.active input {
   width: 160px;
   padding: 8px 10px;
   visibility: visible;
 }
 
-header #search.active a {
+#search.active a {
   background: #CC0020;
 }
 
